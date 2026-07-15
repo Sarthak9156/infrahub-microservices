@@ -1,12 +1,17 @@
 package com.infrahub.authservice.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 
+import com.infrahub.authservice.dto.LoginRequestDTO;
+import com.infrahub.authservice.dto.LoginResponseDTO;
 import com.infrahub.authservice.dto.UserRequestDTO;
 import com.infrahub.authservice.dto.UserResponseDTO;
 import com.infrahub.authservice.entity.User;
+import com.infrahub.authservice.exception.EmailAlreadyExistsException;
 import com.infrahub.authservice.exception.UserNotFoundException;
 import com.infrahub.authservice.repository.UserRepository;
 
@@ -18,6 +23,8 @@ public class GreetingService {
 
 	@Autowired
 	private UserRepository userRepository;
+	@Autowired
+	private BCryptPasswordEncoder passwordEncoder;
 
 	public List<UserResponseDTO> getAllUsers() {
 
@@ -37,15 +44,23 @@ public class GreetingService {
 	}
 
 	public UserResponseDTO createUser(UserRequestDTO request) {
-		User user = new User();
 
-		user.setName(request.getName());
-		user.setEmail(request.getEmail());
-		user.setPassword(request.getPassword());
+	    if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+	        throw new EmailAlreadyExistsException("Email already exists");
+	    }
 
-		userRepository.save(user);
+	    User user = new User();
 
-		return new UserResponseDTO(user.getId(), user.getName(), user.getEmail());
+	    user.setName(request.getName());
+	    user.setEmail(request.getEmail());
+	    user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+	    userRepository.save(user);
+
+	    return new UserResponseDTO(
+	            user.getId(),
+	            user.getName(),
+	            user.getEmail());
 	}
 
 	public UserResponseDTO updateUser(int id, UserRequestDTO request) {
@@ -80,5 +95,17 @@ public class GreetingService {
 		User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User Not Found"));
 
 		return new UserResponseDTO(user.getId(), user.getName(), user.getEmail());
+	}
+	
+	public LoginResponseDTO loginUser(LoginRequestDTO request) {
+
+	    User user = userRepository.findByEmail(request.getEmail())
+	            .orElseThrow(() -> new UserNotFoundException("Invalid Email"));
+
+	    if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+	        throw new RuntimeException("Invalid Password");
+	    }
+
+	    return new LoginResponseDTO("Login Successful");
 	}
 }

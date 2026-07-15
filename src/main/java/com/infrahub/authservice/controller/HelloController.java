@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.infrahub.authservice.dto.LoginRequestDTO;
+import com.infrahub.authservice.dto.LoginResponseDTO;
 import com.infrahub.authservice.dto.UserRequestDTO;
 import com.infrahub.authservice.dto.UserResponseDTO;
 import com.infrahub.authservice.entity.User;
@@ -59,6 +61,15 @@ public class HelloController {
 	public String deleteUser(@PathVariable int id) {
 
 		return greetingService.deleteUser(id);
+	}
+	
+	@PostMapping("/login")
+	public ResponseEntity<LoginResponseDTO> login(
+	        @Valid @RequestBody LoginRequestDTO request) {
+
+	    LoginResponseDTO response = greetingService.loginUser(request);
+
+	    return ResponseEntity.ok(response);
 	}
 
 }

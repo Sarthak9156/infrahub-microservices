@@ -27,7 +27,4 @@ public class UserRequestDTO {
             message = "Password must be between 8 and 20 characters")
     private String password;
 
-    // Constructors
-    // Getters
-    // Setters
 }
