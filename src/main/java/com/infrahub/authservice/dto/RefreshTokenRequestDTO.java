@@ -9,11 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class LoginResponseDTO {
-
-    private String message;
-
-    private String accessToken;
+public class RefreshTokenRequestDTO {
 
     private String refreshToken;
 

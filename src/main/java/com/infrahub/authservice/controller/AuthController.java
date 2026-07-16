@@ -1,10 +1,14 @@
 package com.infrahub.authservice.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,23 +16,27 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.infrahub.authservice.dto.LoginRequestDTO;
 import com.infrahub.authservice.dto.LoginResponseDTO;
+import com.infrahub.authservice.dto.RefreshTokenRequestDTO;
+import com.infrahub.authservice.dto.RefreshTokenResponseDTO;
 import com.infrahub.authservice.dto.UserRequestDTO;
 import com.infrahub.authservice.dto.UserResponseDTO;
-import com.infrahub.authservice.entity.User;
-import com.infrahub.authservice.service.GreetingService;
+import com.infrahub.authservice.service.AuthService;
+import com.infrahub.authservice.service.JwtService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
-import java.util.List;
-import org.springframework.web.bind.annotation.PathVariable;
-
 @RestController
-public class HelloController {
+public class AuthController {
 
 	@Autowired
-	private GreetingService greetingService;
+	private AuthService greetingService;
+
+	@Autowired
+	private JwtService jwtService;
 
 	@GetMapping("/Allusers")
+	@PreAuthorize("hasAuthority('ADMIN')")
 	public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
 
 		List<UserResponseDTO> users = greetingService.getAllUsers();
@@ -70,6 +78,33 @@ public class HelloController {
 	    LoginResponseDTO response = greetingService.loginUser(request);
 
 	    return ResponseEntity.ok(response);
+	}
+	
+	@PostMapping("/refresh")
+	public RefreshTokenResponseDTO refreshToken(
+	        @RequestBody RefreshTokenRequestDTO request) {
+
+	    return greetingService.refreshAccessToken(request);
+	}
+	
+	@PostMapping("/logout")
+	public ResponseEntity<String> logout(HttpServletRequest request) {
+		
+		
+
+	    String authHeader = request.getHeader("Authorization");
+
+	    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+	        return ResponseEntity.badRequest().body("Token Missing");
+	    }
+
+	    String token = authHeader.substring(7);
+
+	    String email = jwtService.extractUsername(token);
+
+	    String message = greetingService.logout(email);
+
+	    return ResponseEntity.ok(message);
 	}
 
 }
